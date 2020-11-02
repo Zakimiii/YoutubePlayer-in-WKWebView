@@ -987,6 +987,67 @@ NSString static *const kWKYTPlayerSyndicationRegexPattern = @"^https://tpc.googl
 }
 
 /**
+ * Private helper method to load an iframe player with the given player parameters.
+ *
+ * @param additionalPlayerParams An NSDictionary of parameters in addition to required parameters
+ *                               to instantiate the HTML5 player with. This differs depending on
+ *                               whether a single video or playlist is being loaded.
+ * @return YES if successful, NO if not.
+ */
+- (BOOL)loadWithWebView:(WKWebView *)webView {
+    [self.webView removeFromSuperview];
+    _webView = webView;
+    [self addSubview:self.webView];
+    
+    self.webView.translatesAutoresizingMaskIntoConstraints = NO;
+    NSLayoutConstraint *topConstraint = [NSLayoutConstraint constraintWithItem:self.webView
+                                                                 attribute:NSLayoutAttributeTop
+                                                                 relatedBy:NSLayoutRelationEqual
+                                                                    toItem:self
+                                                                 attribute:NSLayoutAttributeTop
+                                                                multiplier:1.0
+                                                                  constant:0.0];
+    NSLayoutConstraint *leftConstraint = [NSLayoutConstraint constraintWithItem:self.webView
+                                                                 attribute:NSLayoutAttributeLeft
+                                                                 relatedBy:NSLayoutRelationEqual
+                                                                    toItem:self
+                                                                 attribute:NSLayoutAttributeLeft
+                                                                multiplier:1.0
+                                                                  constant:0.0];
+    NSLayoutConstraint *rightConstraint = [NSLayoutConstraint constraintWithItem:self.webView
+                                                                 attribute:NSLayoutAttributeRight
+                                                                 relatedBy:NSLayoutRelationEqual
+                                                                    toItem:self
+                                                                 attribute:NSLayoutAttributeRight
+                                                                multiplier:1.0
+                                                                  constant:0.0];
+    NSLayoutConstraint *bottomConstraint = [NSLayoutConstraint constraintWithItem:self.webView
+                                                                 attribute:NSLayoutAttributeBottom
+                                                                 relatedBy:NSLayoutRelationEqual
+                                                                    toItem:self
+                                                                 attribute:NSLayoutAttributeBottom
+                                                                multiplier:1.0
+                                                                  constant:0.0];
+    NSArray *constraints = @[topConstraint, leftConstraint, rightConstraint, bottomConstraint];
+    [self addConstraints:constraints];
+    
+    self.webView.navigationDelegate = self;
+    self.webView.UIDelegate = self;
+    
+    if ([self.delegate respondsToSelector:@selector(playerViewPreferredInitialLoadingView:)]) {
+        UIView *initialLoadingView = [self.delegate playerViewPreferredInitialLoadingView:self];
+        if (initialLoadingView) {
+            initialLoadingView.frame = self.bounds;
+            initialLoadingView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            [self addSubview:initialLoadingView];
+            self.initialLoadingView = initialLoadingView;
+        }
+    }
+    
+    return YES;
+}
+
+/**
  * Private method for cueing both cases of playlist ID and array of video IDs. Cueing
  * a playlist does not start playback.
  *
